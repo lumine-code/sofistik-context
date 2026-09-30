@@ -1,0 +1,41 @@
+{
+  "name": "@lumine-code/sofistik-env",
+  "author": "lumine-code",
+  "version": "1.0.0",
+  "description": "Resolves SOFiSTiK project declarations and installed releases.",
+  "keywords": [
+    "sofistik",
+    "cdb",
+    "installation",
+    "configuration",
+    "environment"
+  ],
+  "repository": "https://github.com/lumine-code/sofistik-env",
+  "bugs": {
+    "url": "https://github.com/lumine-code/sofistik-env/issues"
+  },
+  "license": "MIT",
+  "private": true,
+  "main": "lib/index.js",
+  "files": [
+    "lib",
+    "test"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify": "npm run lint && npm run format:check && npm test && npm pack --dry-run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.12.0",
+    "prettier": "^3.9.9"
+  }
+}
