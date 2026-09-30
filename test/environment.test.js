@@ -88,17 +88,69 @@ test("explicit overrides win and an unavailable selected year is preserved", (t)
   assert.equal(resolver.resolve({ projectPath, version: "Auto" }).version, "2024");
 });
 
-test("uses only the supplied project root, including external source files", (t) => {
+test("uses only the file directory even when a conflicting project root is supplied", (t) => {
   const { resolver, directory, projectPath, definition } = fixture(t);
   const external = path.join(directory, "external");
   fs.mkdirSync(external);
   fs.writeFileSync(definition, "SOF_VERSION=2024\nSOF_LANGUAGE=DE");
   fs.writeFileSync(path.join(external, "sofistik.def"), "SOF_VERSION=2026\n");
   const filePath = path.join(external, "model.cdb");
-  assert.equal(resolver.resolve({ projectPath, filePath }).version, "2024");
+  assert.equal(resolver.resolve({ projectPath, filePath }).version, "2026");
   assert.equal(resolver.resolve({ filePath }).version, "2026");
-  fs.unlinkSync(definition);
+  fs.unlinkSync(path.join(external, "sofistik.def"));
   assert.equal(resolver.resolve({ projectPath, filePath }).version, null);
+  assert.equal(resolver.resolve({ projectPath }).version, "2024");
+});
+
+test("selects independent language and edition for sibling file directories", (t) => {
+  const { resolver, projectPath, definition } = fixture(t);
+  const first = path.join(projectPath, "first");
+  const second = path.join(projectPath, "second");
+  fs.mkdirSync(first);
+  fs.mkdirSync(second);
+  fs.writeFileSync(definition, "SOF_VERSION=2018\nSOF_LANGUAGE=EN\nSOF_EDITION=professional");
+  fs.writeFileSync(
+    path.join(first, "sofistik.def"),
+    "SOF_VERSION=2024\nSOF_LANGUAGE=DE\nSOF_EDITION=educational",
+  );
+  fs.writeFileSync(
+    path.join(second, "sofistik.def"),
+    "SOF_VERSION=2099\nSOF_LANGUAGE=EN\nSOF_EDITION=professional",
+  );
+  const german = resolver.resolve({ filePath: path.join(first, "a.dat"), projectPath });
+  const english = resolver.resolve({ filePath: path.join(second, "b.dat"), projectPath });
+  assert.deepEqual(
+    [german.version, german.language, german.edition],
+    ["2024", "de", "educational"],
+  );
+  assert.deepEqual(
+    [english.version, english.language, english.edition],
+    ["2099", "en", "professional"],
+  );
+  assert.equal(german.installed, false);
+  assert.equal(english.installed, false);
+  assert.equal(resolver.resolve({ directoryPath: first, projectPath }).version, "2024");
+});
+
+test("can explicitly skip definitions for an untitled document", () => {
+  let reads = 0;
+  const resolver = new SofistikEnvironmentResolver({
+    readFile: () => {
+      reads++;
+      return "SOF_VERSION=2018\nSOF_LANGUAGE=DE";
+    },
+    readdir: () => [],
+    exists: () => false,
+    fallbackVersion: "2026",
+  });
+  const resolved = resolver.resolve({ readDefinition: false });
+  assert.deepEqual(
+    [resolved.version, resolved.language, resolved.edition],
+    ["2026", "en", "professional"],
+  );
+  assert.equal(reads, 0);
+  assert.equal(resolver.resolve({ readDefinition: false, version: "2024" }).version, "2024");
+  assert.equal(reads, 0);
 });
 
 test("never reads source files or parent definitions, and defaults to cwd", (t) => {

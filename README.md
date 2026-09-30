@@ -6,7 +6,7 @@ Resolves SOFiSTiK project declarations and installed releases.
 
 ## Features
 
-- **Project context**: reads the root sofistik.def for the selected year, language and edition without reading source-file headers.
+- **File context**: reads sofistik.def beside the input file for the selected year, language and edition without reading source-file headers.
 - **Installation discovery**: finds releases containing calculation executables or CDB interfaces and ignores empty leftover directories.
 - **Lightweight API**: uses only Node built-ins, with no schemas, native modules, editor service or runtime dependencies.
 - **Shared paths**: derives installation and CDB interface paths, including the older 2018 and 2020 naming conventions.
@@ -27,10 +27,10 @@ This is a Node library, not an editor package. It is distributed through Git pin
 ```js
 const { SofistikEnvironmentResolver } = require("@lumine-code/sofistik-env");
 const environment = new SofistikEnvironmentResolver();
-const resolved = environment.resolve({ projectPath: "C:/Projects/Bridge" });
+const resolved = environment.resolve({ filePath: "C:/Projects/Bridge/model.dat" });
 ```
 
-The order is an explicit caller version, then SOF_VERSION in the supplied root's sofistik.def, then the newest installed release below C:\Program Files\SOFiSTiK. A file outside a supplied project root uses its adjacent definition; without either path, the working directory applies. Source-file headers never participate. SOF_LANGUAGE accepts EN or DE; SOF_EDITION accepts professional or educational. Defaults are English and professional. An explicitly selected year is preserved even when it is not installed.
+The order is an explicit caller version, then SOF_VERSION in the sofistik.def beside the input file, then the newest installed release below C:\Program Files\SOFiSTiK. A saved file always uses its own directory, even when a caller also supplies projectPath or directoryPath. A missing adjacent definition does not inherit one from a parent or workspace root. Files in different directories can select different environments. Source-file headers never participate. SOF_LANGUAGE accepts EN or DE; SOF_EDITION accepts professional or educational. Defaults are English and professional. An explicitly selected year is preserved even when it is not installed.
 
 An optional constructor fallbackVersion, either a year or a function returning one, runs only when no declaration or installation selects a year. sofistik-data supplies its own latest dataset through this option; this library does not maintain a second release catalogue or depend on the dataset package. Runtime-only consumers leave it unset and receive version: null and installed: false when no release is available.
 
@@ -38,7 +38,7 @@ These definition keys are integration declarations, not a claim that SOFiSTiK it
 
 ## API
 
-resolve({ projectPath, filePath, version, language, edition }) returns { version, language, edition, root, installPath, installed, versionSource }. Every context field is optional. versionSource is explicit, definition, installed, fallback or unresolved. Constructor filesystem and clock hooks support deterministic tests; normal consumers use the default installation root.
+resolve({ filePath, directoryPath, projectPath, readDefinition, version, language, edition }) returns { version, language, edition, root, installPath, installed, versionSource }. Every context field is optional. Without filePath, directoryPath supplies an explicit directory context; projectPath remains a compatibility alias, then the working directory applies. readDefinition: false skips declaration lookup entirely for callers such as untitled documents. versionSource is explicit, definition, installed, fallback or unresolved. Constructor filesystem and clock hooks support deterministic tests; normal consumers use the default installation root.
 
 getInstalledVersions() returns installed release years newest first. installationPath(root, version), cdbInterfaceFileName(version, edition) and cdbInterfacePath(root, version, edition) expose the same path conventions used by the resolver and native reader.
 
