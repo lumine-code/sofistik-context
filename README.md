@@ -7,7 +7,7 @@ Resolves SOFiSTiK project declarations and installed releases.
 ## Features
 
 - **File context**: reads sofistik.def beside the input file for the selected year, language and edition without reading source-file headers.
-- **Installation discovery**: finds releases containing calculation executables or CDB interfaces and ignores empty leftover directories.
+- **Installation discovery**: finds releases containing calculation executables or CDB interfaces and reports the selected installation's capabilities.
 - **Lightweight API**: uses only Node built-ins, with no schemas, native modules, editor service or runtime dependencies.
 - **Shared paths**: derives installation and CDB interface paths, including the older 2018 and 2020 naming conventions.
 - **Offline behavior**: reports a missing installation without throwing or inventing an installed release.
@@ -30,7 +30,7 @@ const environment = new SofistikEnvironmentResolver();
 const resolved = environment.resolve({ filePath: "C:/Projects/Bridge/model.dat" });
 ```
 
-The order is an explicit caller version, then SOF_VERSION in the sofistik.def beside the input file, then the newest installed release below C:\Program Files\SOFiSTiK. A saved file always uses its own directory, even when a caller also supplies projectPath or directoryPath. A missing adjacent definition does not inherit one from a parent or workspace root. Files in different directories can select different environments. Source-file headers never participate. SOF_LANGUAGE accepts EN or DE; SOF_EDITION accepts professional or educational. Defaults are English and professional. An explicitly selected year is preserved even when it is not installed.
+The order is an explicit caller version, then SOF_VERSION in the sofistik.def beside the input file, then the newest installed release below C:\Program Files\SOFiSTiK. A saved file always uses its own directory, even when a caller also supplies directoryPath. A missing adjacent definition does not inherit one from a parent or workspace root. Files in different directories can select different environments. Source-file headers never participate. SOF_LANGUAGE accepts EN or DE; SOF_EDITION accepts professional or educational. Defaults are English and professional. An explicitly selected year is preserved even when it is not installed. Explicit releases must be four-digit years, languages must be en or de, and editions must be professional or educational.
 
 An optional constructor fallbackVersion, either a year or a function returning one, runs only when no declaration or installation selects a year. sofistik-data supplies its own latest dataset through this option; this library does not maintain a second release catalogue or depend on the dataset package. Runtime-only consumers leave it unset and receive version: null and installed: false when no release is available.
 
@@ -38,7 +38,11 @@ These definition keys are integration declarations, not a claim that SOFiSTiK it
 
 ## API
 
-resolve({ filePath, directoryPath, projectPath, readDefinition, version, language, edition }) returns { version, language, edition, root, installPath, installed, versionSource }. Every context field is optional. Without filePath, directoryPath supplies an explicit directory context; projectPath remains a compatibility alias, then the working directory applies. readDefinition: false skips declaration lookup entirely for callers such as untitled documents. versionSource is explicit, definition, installed, fallback or unresolved. Constructor filesystem and clock hooks support deterministic tests; normal consumers use the default installation root.
+resolve({ filePath, directoryPath, readDefinition, version, language, edition }) returns an immutable { version, language, edition, root, installPath, installed, versionSource, capabilities } snapshot. Every context field is optional. Without filePath, directoryPath supplies an explicit directory context, then the working directory applies. readDefinition: false skips declaration lookup entirely for callers such as untitled documents. versionSource is explicit, definition, installed, fallback or unresolved. Constructor filesystem and clock hooks support deterministic tests; normal consumers use the default installation root.
+
+capabilities distinguishes calculation.wps and calculation.sps from the selected edition's cdb.available and manuals.available; the latter two also include their absolute path. installed reports the presence of any supported executable or interface, so it does not promise that a particular application exists. applicationPath(environment, name) returns an existing executable in that snapshot's installation or null. Application names are basenames, with an optional .exe suffix, and cannot escape the installation directory.
+
+parseDefinition(text) reads the integration declarations without filesystem access. updateDefinition(text, { version, language, edition }) updates those declarations, removes a field when its value is null, collapses duplicate declarations and retains unrelated lines, the byte-order mark and the newline convention. Consumers own filesystem writes.
 
 getInstalledVersions() returns installed release years newest first. installationPath(root, version), cdbInterfaceFileName(version, edition) and cdbInterfacePath(root, version, edition) expose the same path conventions used by the resolver and native reader.
 

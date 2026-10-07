@@ -44,6 +44,11 @@ test("resolves an absent installation without a schema dependency or invented ye
     installPath: "",
     installed: false,
     versionSource: "unresolved",
+    capabilities: {
+      calculation: { wps: false, sps: false },
+      cdb: { path: "", available: false },
+      manuals: { path: "", available: false },
+    },
   });
   assert.deepEqual(require("../package.json").dependencies || {}, {});
 });
@@ -55,9 +60,7 @@ test("normalizes integration declarations without using source headers", () => {
     edition: null,
   });
   assert.deepEqual(
-    parseDefinition(
-      "\uFEFF sof_version = 2024\r\n SOF_LANGUAGE=German\r\n SOF_EDITION=Educational",
-    ),
+    parseDefinition("\uFEFF sof_version = 2024\r\n SOF_LANGUAGE=DE\r\n SOF_EDITION=Educational"),
     { version: "2024", language: "de", edition: "educational" },
   );
   assert.equal(parseDefinition("SOF_VERSION=20245\nSOF_LANGUAGE=FR").version, null);
@@ -68,16 +71,16 @@ test("explicit overrides win and an unavailable selected year is preserved", (t)
   const { resolver, projectPath, definition, install } = fixture(t);
   install("2026");
   fs.writeFileSync(definition, "SOF_VERSION=2024\nSOF_LANGUAGE=DE\nSOF_EDITION=educational");
-  const declared = resolver.resolve({ projectPath });
+  const declared = resolver.resolve({ directoryPath: projectPath });
   assert.equal(declared.version, "2024");
   assert.equal(declared.versionSource, "definition");
   assert.equal(declared.installed, false);
   assert.equal(declared.language, "de");
   assert.equal(declared.edition, "educational");
   const explicit = resolver.resolve({
-    projectPath,
+    directoryPath: projectPath,
     version: "2099",
-    language: "English",
+    language: "EN",
     edition: "professional",
   });
   assert.equal(explicit.version, "2099");
@@ -85,7 +88,7 @@ test("explicit overrides win and an unavailable selected year is preserved", (t)
   assert.equal(explicit.installed, false);
   assert.equal(explicit.language, "en");
   assert.equal(explicit.edition, "professional");
-  assert.equal(resolver.resolve({ projectPath, version: "Auto" }).version, "2024");
+  assert.equal(resolver.resolve({ directoryPath: projectPath, version: "Auto" }).version, "2024");
 });
 
 test("uses only the file directory even when a conflicting project root is supplied", (t) => {
@@ -95,11 +98,11 @@ test("uses only the file directory even when a conflicting project root is suppl
   fs.writeFileSync(definition, "SOF_VERSION=2024\nSOF_LANGUAGE=DE");
   fs.writeFileSync(path.join(external, "sofistik.def"), "SOF_VERSION=2026\n");
   const filePath = path.join(external, "model.cdb");
-  assert.equal(resolver.resolve({ projectPath, filePath }).version, "2026");
+  assert.equal(resolver.resolve({ directoryPath: projectPath, filePath }).version, "2026");
   assert.equal(resolver.resolve({ filePath }).version, "2026");
   fs.unlinkSync(path.join(external, "sofistik.def"));
-  assert.equal(resolver.resolve({ projectPath, filePath }).version, null);
-  assert.equal(resolver.resolve({ projectPath }).version, "2024");
+  assert.equal(resolver.resolve({ directoryPath: projectPath, filePath }).version, null);
+  assert.equal(resolver.resolve({ directoryPath: projectPath }).version, "2024");
 });
 
 test("selects independent language and edition for sibling file directories", (t) => {
@@ -198,30 +201,30 @@ test("calls an optional dataset fallback only when no selected year exists", (t)
       return "2026";
     },
   });
-  assert.equal(resolver.resolve({ projectPath }).version, "2026");
-  assert.equal(resolver.resolve({ projectPath }).versionSource, "fallback");
+  assert.equal(resolver.resolve({ directoryPath: projectPath }).version, "2026");
+  assert.equal(resolver.resolve({ directoryPath: projectPath }).versionSource, "fallback");
   assert.equal(calls, 2);
   install("2024");
   resolver.clearCache();
-  assert.equal(resolver.resolve({ projectPath }).version, "2024");
+  assert.equal(resolver.resolve({ directoryPath: projectPath }).version, "2024");
   fs.writeFileSync(definition, "SOF_VERSION=2022");
-  assert.equal(resolver.resolve({ projectPath }).version, "2022");
-  assert.equal(resolver.resolve({ projectPath, version: "2099" }).version, "2099");
+  assert.equal(resolver.resolve({ directoryPath: projectPath }).version, "2022");
+  assert.equal(resolver.resolve({ directoryPath: projectPath, version: "2099" }).version, "2099");
   assert.equal(calls, 2);
 });
 
 test("observes definition creation, replacement and deletion without caching declarations", (t) => {
   const { resolver, projectPath, definition } = fixture(t, { fallbackVersion: "2026" });
-  assert.equal(resolver.resolve({ projectPath }).version, "2026");
+  assert.equal(resolver.resolve({ directoryPath: projectPath }).version, "2026");
   fs.writeFileSync(definition, "SOF_VERSION=2024\nSOF_LANGUAGE=DE\nSOF_EDITION=educational");
-  assert.equal(resolver.resolve({ projectPath }).version, "2024");
+  assert.equal(resolver.resolve({ directoryPath: projectPath }).version, "2024");
   const replacement = path.join(projectPath, "replacement.def");
   fs.writeFileSync(replacement, "SOF_VERSION=2022");
   fs.renameSync(replacement, definition);
-  assert.equal(resolver.resolve({ projectPath }).version, "2022");
-  assert.equal(resolver.resolve({ projectPath }).edition, "professional");
+  assert.equal(resolver.resolve({ directoryPath: projectPath }).version, "2022");
+  assert.equal(resolver.resolve({ directoryPath: projectPath }).edition, "professional");
   fs.unlinkSync(definition);
-  assert.equal(resolver.resolve({ projectPath }).version, "2026");
+  assert.equal(resolver.resolve({ directoryPath: projectPath }).version, "2026");
 });
 
 test("bounds installation caching, isolates returned lists and invalidates explicitly", () => {
