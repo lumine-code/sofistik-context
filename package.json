@@ -1,8 +1,8 @@
 {
-  "name": "@lumine-code/sofistik-env",
+  "name": "@lumine-code/sofistik-context",
   "author": "lumine-code",
   "version": "1.0.0",
-  "description": "Resolves SOFiSTiK project declarations and installed releases.",
+  "description": "Resolves SOFiSTiK file contexts and installed releases.",
   "keywords": [
     "sofistik",
     "cdb",
@@ -10,9 +10,9 @@
     "configuration",
     "environment"
   ],
-  "repository": "https://github.com/lumine-code/sofistik-env",
+  "repository": "https://github.com/lumine-code/sofistik-context",
   "bugs": {
-    "url": "https://github.com/lumine-code/sofistik-env/issues"
+    "url": "https://github.com/lumine-code/sofistik-context/issues"
   },
   "license": "MIT",
   "private": true,

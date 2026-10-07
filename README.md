@@ -1,6 +1,6 @@
-# sofistik-env
+# sofistik-context
 
-Resolves SOFiSTiK project declarations and installed releases.
+Resolves SOFiSTiK file contexts and installed releases.
 
 > **NOTE**: This package is not an official SOFiSTiK product and is not affiliated with or endorsed by SOFiSTiK AG.
 
@@ -17,7 +17,7 @@ Resolves SOFiSTiK project declarations and installed releases.
 Install from an immutable Git commit:
 
 ```sh
-npm install github:lumine-code/sofistik-env#<commit-sha>
+npm install github:lumine-code/sofistik-context#<commit-sha>
 ```
 
 This is a Node library, not an editor package. It is distributed through Git pins and is not published to the npm registry.
@@ -25,14 +25,14 @@ This is a Node library, not an editor package. It is distributed through Git pin
 ## Usage
 
 ```js
-const { SofistikEnvironmentResolver } = require("@lumine-code/sofistik-env");
-const environment = new SofistikEnvironmentResolver();
+const { SofistikContextResolver } = require("@lumine-code/sofistik-context");
+const environment = new SofistikContextResolver();
 const resolved = environment.resolve({ filePath: "C:/Projects/Bridge/model.dat" });
 ```
 
 The order is an explicit caller version, then SOF_VERSION in the sofistik.def beside the input file, then the newest installed release below C:\Program Files\SOFiSTiK. A saved file always uses its own directory, even when a caller also supplies directoryPath. A missing adjacent definition does not inherit one from a parent or workspace root. Files in different directories can select different environments. Source-file headers never participate. SOF_LANGUAGE accepts EN or DE; SOF_EDITION accepts professional or educational. Defaults are English and professional. An explicitly selected year is preserved even when it is not installed. Explicit releases must be four-digit years, languages must be en or de, and editions must be professional or educational.
 
-An optional constructor fallbackVersion, either a year or a function returning one, runs only when no declaration or installation selects a year. sofistik-data supplies its own latest dataset through this option; this library does not maintain a second release catalogue or depend on the dataset package. Runtime-only consumers leave it unset and receive version: null and installed: false when no release is available.
+An optional constructor fallbackVersion, either a year or a function returning one, runs only when no declaration or installation selects a year. sofistik-schema supplies its own latest dataset through this option; this library does not maintain a second release catalogue or depend on the dataset package. Runtime-only consumers leave it unset and receive version: null and installed: false when no release is available.
 
 These definition keys are integration declarations, not a claim that SOFiSTiK itself interprets them. Definitions are read fresh, while installation scans are cached for at most five seconds by default. clearCache() explicitly invalidates that scan. A CDB session should retain its chosen environment until reopened so a definition edit cannot replace an already loaded interface DLL.
 

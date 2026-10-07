@@ -1,12 +1,12 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { SofistikEnvironmentResolver, updateDefinition } = require("../lib");
+const { SofistikContextResolver, updateDefinition } = require("../lib");
 const path = require("node:path");
 
 test("separates selected-edition CDB capabilities from calculation installations", () => {
   const root = path.resolve("installed");
   const install = path.join(root, "2026", "SOFiSTiK 2026");
-  const resolver = new SofistikEnvironmentResolver({
+  const resolver = new SofistikContextResolver({
     root,
     readFile: () => null,
     readdir: () => ["2026"],
@@ -24,7 +24,7 @@ test("separates selected-edition CDB capabilities from calculation installations
 });
 
 test("rejects invalid explicit context rather than selecting an unrelated release", () => {
-  const resolver = new SofistikEnvironmentResolver({ readFile: () => null, readdir: () => [] });
+  const resolver = new SofistikContextResolver({ readFile: () => null, readdir: () => [] });
   assert.throws(() => resolver.resolve({ version: "../2026" }), /Invalid.*release/);
   assert.throws(() => resolver.resolve({ language: "German" }), /language/);
   assert.throws(() => resolver.resolve({ edition: "../educational" }), /edition/);

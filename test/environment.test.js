@@ -5,7 +5,7 @@ const path = require("node:path");
 const test = require("node:test");
 const {
   INSTALLATION_ROOT,
-  SofistikEnvironmentResolver,
+  SofistikContextResolver,
   parseDefinition,
   installationPath,
   cdbInterfaceFileName,
@@ -13,13 +13,13 @@ const {
 } = require("../lib");
 
 function fixture(t, options = {}) {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "sofistik-env-"));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), "sofistik-context-"));
   t.after(() => fs.rmSync(directory, { recursive: true, force: true, maxRetries: 10 }));
   const root = path.join(directory, "installed");
   const projectPath = path.join(directory, "project");
   fs.mkdirSync(root);
   fs.mkdirSync(projectPath);
-  const resolver = new SofistikEnvironmentResolver({ root, ...options });
+  const resolver = new SofistikContextResolver({ root, ...options });
   const definition = path.join(projectPath, "sofistik.def");
   function install(version, edition = "professional") {
     const file = cdbInterfacePath(root, version, edition);
@@ -30,7 +30,7 @@ function fixture(t, options = {}) {
 }
 
 test("resolves an absent installation without a schema dependency or invented year", () => {
-  const resolver = new SofistikEnvironmentResolver({
+  const resolver = new SofistikContextResolver({
     readFile: () => null,
     readdir: () => [],
     exists: () => false,
@@ -137,7 +137,7 @@ test("selects independent language and edition for sibling file directories", (t
 
 test("can explicitly skip definitions for an untitled document", () => {
   let reads = 0;
-  const resolver = new SofistikEnvironmentResolver({
+  const resolver = new SofistikContextResolver({
     readFile: () => {
       reads++;
       return "SOF_VERSION=2018\nSOF_LANGUAGE=DE";
@@ -160,7 +160,7 @@ test("never reads source files or parent definitions, and defaults to cwd", (t) 
   const { root, projectPath, definition } = fixture(t);
   fs.writeFileSync(definition, "SOF_VERSION=2022");
   const reads = [];
-  const resolver = new SofistikEnvironmentResolver({
+  const resolver = new SofistikContextResolver({
     root,
     cwd: () => projectPath,
     readFile: (file) => {
@@ -230,7 +230,7 @@ test("observes definition creation, replacement and deletion without caching dec
 test("bounds installation caching, isolates returned lists and invalidates explicitly", () => {
   let now = 0,
     scans = 0;
-  const resolver = new SofistikEnvironmentResolver({
+  const resolver = new SofistikContextResolver({
     now: () => now,
     installationCacheMs: 100,
     readFile: () => null,
